@@ -187,6 +187,7 @@ public final class Likearr {
                 }
 
                 System.out.println("Verified copy; original remains liked: " + target);
+                Dashboard.record("copy", e.path("name").asText(), "Copy verified; waiting for Jellyfin");
                 jellyfin.refreshLibrary();
             }
 
@@ -226,6 +227,7 @@ public final class Likearr {
             save();
 
             System.out.println("MOVED and favorite verified: " + target);
+            Dashboard.record("moved", e.path("name").asText(), "Moved and favorite verified");
         }
     }
 
@@ -345,13 +347,19 @@ public final class Likearr {
 
             if (now.getHour() == runTime.getHour() && now.getMinute() == runTime.getMinute() && !now.toLocalDate().equals(last)) {
                 last = now.toLocalDate();
+                Dashboard.record("run", "Scheduled check", "Started");
                 long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(45);
                 do {
                     try {
                         Likearr app = new Likearr();
-                        if (app.run(true) != 0 || app.pending.isEmpty()) break;
+                        int result = app.run(true);
+                        if (result != 0 || app.pending.isEmpty()) {
+                            Dashboard.record(result == 0 ? "complete" : "error", "Scheduled check", result == 0 ? "Completed" : "Completed with errors");
+                            break;
+                        }
                     } catch (Exception e) {
                         System.err.println("Favorites check failed: " + e.getMessage());
+                        Dashboard.record("error", "Scheduled check", "Failed; check container logs");
                         break;
                     }
                     Thread.sleep(60_000);
@@ -363,6 +371,7 @@ public final class Likearr {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
+            Dashboard.start();
             scheduled();
         } else if (args.length == 1 && (args[0].equals("--dry-run") || args[0].equals("--apply")))
             System.exit(new Likearr().run(args[0].equals("--apply")));

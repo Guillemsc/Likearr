@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Likearr</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        background: #101312;
+        color: #ecf0ec;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      main {
+        max-width: 1120px;
+        margin: auto;
+        padding: 36px 32px 70px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 32px;
+        border-bottom: 1px solid #2a302c;
+      }
+      .brand {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        font-weight: 750;
+        font-size: 19px;
+        letter-spacing: -0.02em;
+      }
+      .logo {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        background: #c6ef7a;
+        color: #162011;
+        border-radius: 12px;
+        font-size: 21px;
+      }
+      .badge {
+        color: #b8d89c;
+        background: #1e2b20;
+        border: 1px solid #354b30;
+        padding: 7px 12px;
+        border-radius: 99px;
+        font-size: 12px;
+      }
+      .eyebrow {
+        color: #a9cb84;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 700;
+        margin: 55px 0 14px;
+      }
+      h1 {
+        font-size: clamp(32px, 5vw, 48px);
+        letter-spacing: -0.05em;
+        margin: 0 0 10px;
+      }
+      p {
+        color: #a0aaa2;
+        margin: 0;
+        line-height: 1.6;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin: 32px 0 46px;
+      }
+      .card,
+      .panel {
+        background: #191e1b;
+        border: 1px solid #2b332d;
+        border-radius: 16px;
+      }
+      .card {
+        padding: 22px;
+        min-height: 145px;
+      }
+      .label {
+        font-size: 12px;
+        color: #9ba69c;
+      }
+      .value {
+        font-size: 27px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        margin-top: 25px;
+      }
+      .sub {
+        font-size: 12px;
+        color: #8e9990;
+        margin-top: 5px;
+      }
+      .section {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 16px;
+      }
+      .section h2 {
+        margin: 0;
+        font-size: 19px;
+        letter-spacing: -0.02em;
+      }
+      .section span {
+        font-size: 12px;
+        color: #8f9b91;
+      }
+      .panel {
+        overflow: hidden;
+      }
+      .row {
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-bottom: 1px solid #2a302c;
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .dot {
+        width: 36px;
+        height: 36px;
+        flex: none;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #2a382b;
+        color: #c6ef7a;
+      }
+      .text {
+        min-width: 0;
+        flex: 1;
+      }
+      .title {
+        font-size: 14px;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+      }
+      .detail {
+        font-size: 12px;
+        color: #91a094;
+        margin-top: 4px;
+      }
+      .time {
+        font-size: 12px;
+        color: #89948b;
+        white-space: nowrap;
+      }
+      .empty {
+        padding: 36px 22px;
+        color: #9ca89e;
+        font-size: 14px;
+      }
+      .pending {
+        margin-bottom: 34px;
+      }
+      .note {
+        margin-top: 26px;
+        color: #7d897f;
+        font-size: 12px;
+      }
+      @media (max-width: 650px) {
+        main {
+          padding: 24px 18px;
+        }
+        .cards {
+          grid-template-columns: 1fr;
+        }
+        .card {
+          min-height: 100px;
+        }
+        .value {
+          margin-top: 12px;
+        }
+        .time {
+          display: none;
+        }
+        .eyebrow {
+          margin-top: 36px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <header>
+        <div class="brand"><span class="logo">♥</span> Likearr</div>
+        <span class="badge" id="connection">Connecting</span>
+      </header>
+      <div class="eyebrow">Your music, in the right place</div>
+      <h1>Everything in its place.</h1>
+      <p>A quiet overview of your liked tracks and recent moves.</p>
+      <div class="cards">
+        <div class="card">
+          <div class="label">Daily check</div>
+          <div class="value" id="schedule">—</div>
+          <div class="sub" id="timezone">Local time</div>
+        </div>
+        <div class="card">
+          <div class="label">Waiting for Jellyfin</div>
+          <div class="value" id="pending-count">—</div>
+          <div class="sub">Tracks awaiting a library scan</div>
+        </div>
+        <div class="card">
+          <div class="label">Recent moves</div>
+          <div class="value" id="moved-count">—</div>
+          <div class="sub">In the activity history</div>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Waiting for Jellyfin</h2>
+        <span>Pending moves</span>
+      </div>
+      <div class="panel pending" id="pending"><div class="empty">Loading…</div></div>
+      <div class="section">
+        <h2>Recent activity</h2>
+        <span>Last 200 events</span>
+      </div>
+      <div class="panel" id="activity"><div class="empty">Loading…</div></div>
+      <p class="note">
+        Activity appears here from the time this dashboard is installed. Refreshes automatically
+        every 15 seconds.
+      </p>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      
+      function row(icon, title, detail, time) {
+        const wrap = document.createElement("div");
+        wrap.className = "row";
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        dot.textContent = icon;
+        const text = document.createElement("div");
+        text.className = "text";
+        const name = document.createElement("div");
+        name.className = "title";
+        name.textContent = title;
+        const info = document.createElement("div");
+        info.className = "detail";
+        info.textContent = detail;
+        text.append(name, info);
+        const date = document.createElement("div");
+        date.className = "time";
+        date.textContent = time || "";
+        wrap.append(dot, text, date);
+        return wrap;
+      }
+
+      function empty(target, message) {
+        target.replaceChildren();
+        const e = document.createElement("div");
+        e.className = "empty";
+        e.textContent = message;
+        target.append(e);
+      }
+
+      async function update() {
+        try {
+          const response = await fetch("/api/status", { cache: "no-store" });
+          if (!response.ok) throw Error("Status unavailable");
+
+          const data = await response.json();
+          $("connection").textContent = "● Connected";
+          $("schedule").textContent = data.runTime;
+          $("timezone").textContent = data.timezone;
+          $("pending-count").textContent = data.pending.length;
+          $("moved-count").textContent = data.activity.filter((x) => x.type === "moved").length;
+
+          const pending = $("pending");
+          if (!data.pending.length) empty(pending, "Nothing waiting. You’re all caught up.");
+          else {
+            pending.replaceChildren();
+            data.pending.forEach((x) =>
+              pending.append(
+                row(
+                  "◷",
+                  x.title,
+                  "Waiting for Jellyfin to index the copy",
+                  x.createdAt ? new Date(x.createdAt * 1000).toLocaleString() : "",
+                ),
+              ),
+            );
+          }
+
+          const activity = $("activity");
+          if (!data.activity.length)
+            empty(activity, "No activity yet. Your next check will appear here.");
+          else {
+            activity.replaceChildren();
+            data.activity.forEach((x) =>
+              activity.append(
+                row(
+                  x.type === "moved" ? "✓" : x.type === "error" ? "!" : "·",
+                  x.title,
+                  x.detail,
+                  x.at ? new Date(x.at).toLocaleString() : "",
+                ),
+              ),
+            );
+          }
+        } catch (e) {
+          $("connection").textContent = "● Disconnected";
+        }
+      }
+      update();
+      setInterval(update, 15000);
+    </script>
+  </body>
+</html>

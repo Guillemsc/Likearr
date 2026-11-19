@@ -8,6 +8,16 @@ Likearr moves liked Explo tracks into the main Jellyfin music library. It copies
 
 The application uses Java 21 and Maven. The scheduler runs daily at `LIKEARR_RUN_TIME` (default `01:00`) in the `TZ` time zone, retrying pending moves for up to 45 minutes. Set the time in 24-hour `HH:mm` format, for example `LIKEARR_RUN_TIME=13:30`. Recreate the container after changing `.env`. The application also supports `--dry-run` and `--apply` for one-off checks.
 
+## Activity dashboard
+
+The read-only dashboard shows the daily schedule, pending moves and the last 200 activity events recorded since this version was installed. It listens only on localhost at port 7676 by default; set `LIKEARR_WEB_PORT` to change the port. The existing host-network Compose setup lets it listen on the NAS loopback interface. To view it from your computer, create an SSH tunnel:
+
+```sh
+ssh -N -L 7676:127.0.0.1:7676 -p 5552 BateaCapital-admin@192.168.1.152
+```
+
+Keep that command running and open `http://127.0.0.1:7676` on your computer. The activity history is stored in the existing persistent state directory. The dashboard is read-only and has no sign-in; keep it on localhost or protect it with authenticated access if you later put a proxy in front of it.
+
 Build and test with `mvn clean verify`. The Dockerfile builds a Java runtime image. `compose.yaml` builds it locally; `deploy/compose.container-manager.yaml` pulls the published image from GHCR.
 
 All connection details and paths are configured with environment variables in `.env`; copy `.env.example` and set values for your Jellyfin server and filesystem. `LIKEARR_JELLYFIN_API_KEY` and `LIKEARR_JELLYFIN_USERNAME` select the account whose likes are processed. `LIKEARR_JELLYFIN_URL` is the server address. `LIKEARR_MUSIC_HOST` and `LIKEARR_STATE_HOST` are host paths mounted as `LIKEARR_MUSIC_ROOT` and `LIKEARR_STATE_ROOT` inside the container. `LIKEARR_EXPLO_ROOT` identifies the source folder, and `LIKEARR_JELLYFIN_MUSIC_ROOT` is the path prefix reported by Jellyfin. Likearr automatically creates `/state/promote-favorites-pending.json` when it first records a pending move; the host state directory remains mounted for persistence. `TZ` controls the daily schedule timezone. The default `compose.yaml` uses `env_file: .env`; keep that file private and never commit it.
