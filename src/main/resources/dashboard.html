@@ -329,11 +329,9 @@
         }
       }
       $("run-now").addEventListener("click", async () => {
-        const token = window.prompt("Enter your Likearr dashboard token:");
-        if (token === null) return;
         $("run-now").disabled = true;
         try {
-          const response = await fetch("/api/run", { method: "POST", headers: { "X-Likearr-Token": token } });
+          const response = await fetch("/api/run", { method: "POST", headers: { "X-Likearr-Request": "1" } });
           $("run-message").textContent = await response.text();
         } catch (e) {
           $("run-message").textContent = "Could not start the run.";

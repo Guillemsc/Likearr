@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -66,12 +65,8 @@ final class Dashboard {
             String path = exchange.getRequestURI().getPath();
             try {
                 if ("/api/run".equals(path) && "POST".equals(exchange.getRequestMethod())) {
-                    String token = System.getenv("LIKEARR_WEB_TOKEN");
-                    String provided = exchange.getRequestHeaders().getFirst("X-Likearr-Token");
-                    if (token == null || token.isBlank()) {
-                        respond(exchange, 503, "text/plain", "Set LIKEARR_WEB_TOKEN to enable Run now".getBytes(StandardCharsets.UTF_8));
-                    } else if (provided == null || !MessageDigest.isEqual(token.getBytes(StandardCharsets.UTF_8), provided.getBytes(StandardCharsets.UTF_8))) {
-                        respond(exchange, 401, "text/plain", "Invalid dashboard token".getBytes(StandardCharsets.UTF_8));
+                    if (!"1".equals(exchange.getRequestHeaders().getFirst("X-Likearr-Request"))) {
+                        respond(exchange, 403, "text/plain", "Invalid request".getBytes(StandardCharsets.UTF_8));
                     } else if (!RunCoordinator.start("Manual check")) {
                         respond(exchange, 409, "text/plain", "A run is already in progress".getBytes(StandardCharsets.UTF_8));
                     } else respond(exchange, 202, "text/plain", "Run started".getBytes(StandardCharsets.UTF_8));

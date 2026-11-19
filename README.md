@@ -10,7 +10,7 @@ The application uses Java 21 and Maven. The scheduler runs daily at `LIKEARR_RUN
 
 ## Activity dashboard
 
-The dashboard shows the daily schedule, pending moves and the last 200 activity events recorded since this version was installed. It listens on localhost at port 7676 by default; set `LIKEARR_WEB_PORT` to change the port. With host networking, set `LIKEARR_WEB_BIND` to a specific NAS LAN address to access it from that network. The dashboard has no sign-in, so anyone who can reach that address and port can view activity. Starting a run from the dashboard requires the `LIKEARR_WEB_TOKEN` value from `.env`; choose a private random token. The browser asks for it each time and does not store it. HTTP does not encrypt the token; use the SSH tunnel or an authenticated HTTPS proxy if the network is not trusted. Alternatively, leave it on localhost and create an SSH tunnel:
+The dashboard shows the daily schedule, pending moves and the last 200 activity events recorded since this version was installed. It listens on localhost at port 7676 by default; set `LIKEARR_WEB_PORT` to change the port. With host networking, set `LIKEARR_WEB_BIND` to a specific NAS LAN address to access it from that network. The dashboard has no sign-in: anyone who can reach it can view activity and start a run. Alternatively, leave it on localhost and create an SSH tunnel:
 
 ```sh
 ssh -N -L 7676:127.0.0.1:7676 -p 5552 BateaCapital-admin@192.168.1.152
