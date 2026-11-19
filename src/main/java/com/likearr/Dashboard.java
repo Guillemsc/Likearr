@@ -11,11 +11,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-/** Read-only localhost dashboard; does not return credentials or file paths. */
+/** Dashboard never returns credentials or file paths. */
 final class Dashboard {
     private static final Path HISTORY = Path.of("/state/likearr-activity.jsonl");
     private static final int MAX_EVENTS = 200;
@@ -62,12 +63,24 @@ final class Dashboard {
         HttpServer server = HttpServer.create(new InetSocketAddress(bindAddress, port), 0);
 
         server.createContext("/", exchange -> {
-            if (!"GET".equals(exchange.getRequestMethod())) {
-                respond(exchange, 405, "text/plain", "Method not allowed".getBytes(StandardCharsets.UTF_8));
-                return;
-            }
             String path = exchange.getRequestURI().getPath();
             try {
+                if ("/api/run".equals(path) && "POST".equals(exchange.getRequestMethod())) {
+                    String token = System.getenv("LIKEARR_WEB_TOKEN");
+                    String provided = exchange.getRequestHeaders().getFirst("X-Likearr-Token");
+                    if (token == null || token.isBlank()) {
+                        respond(exchange, 503, "text/plain", "Set LIKEARR_WEB_TOKEN to enable Run now".getBytes(StandardCharsets.UTF_8));
+                    } else if (provided == null || !MessageDigest.isEqual(token.getBytes(StandardCharsets.UTF_8), provided.getBytes(StandardCharsets.UTF_8))) {
+                        respond(exchange, 401, "text/plain", "Invalid dashboard token".getBytes(StandardCharsets.UTF_8));
+                    } else if (!RunCoordinator.start("Manual check")) {
+                        respond(exchange, 409, "text/plain", "A run is already in progress".getBytes(StandardCharsets.UTF_8));
+                    } else respond(exchange, 202, "text/plain", "Run started".getBytes(StandardCharsets.UTF_8));
+                    return;
+                }
+                if (!"GET".equals(exchange.getRequestMethod())) {
+                    respond(exchange, 405, "text/plain", "Method not allowed".getBytes(StandardCharsets.UTF_8));
+                    return;
+                }
                 if ("/api/status".equals(path)) respond(exchange, 200, "application/json; charset=utf-8", status());
                 else if ("/".equals(path)) {
                     try (var in = Dashboard.class.getResourceAsStream("/dashboard.html")) {
@@ -89,6 +102,7 @@ final class Dashboard {
         ObjectNode response = Likearr.JSON.createObjectNode();
         response.put("runTime", Likearr.env("LIKEARR_RUN_TIME", "01:00"));
         response.put("timezone", ZonedDateTime.now().getZone().getId());
+        response.put("running", RunCoordinator.running());
 
         ArrayNode waiting = response.putArray("pending");
 

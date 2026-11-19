@@ -347,23 +347,8 @@ public final class Likearr {
 
             if (now.getHour() == runTime.getHour() && now.getMinute() == runTime.getMinute() && !now.toLocalDate().equals(last)) {
                 last = now.toLocalDate();
-                Dashboard.record("run", "Scheduled check", "Started");
-                long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(45);
-                do {
-                    try {
-                        Likearr app = new Likearr();
-                        int result = app.run(true);
-                        if (result != 0 || app.pending.isEmpty()) {
-                            Dashboard.record(result == 0 ? "complete" : "error", "Scheduled check", result == 0 ? "Completed" : "Completed with errors");
-                            break;
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Favorites check failed: " + e.getMessage());
-                        Dashboard.record("error", "Scheduled check", "Failed; check container logs");
-                        break;
-                    }
-                    Thread.sleep(60_000);
-                } while (System.nanoTime() < deadline);
+                if (!RunCoordinator.start("Scheduled check"))
+                    Dashboard.record("pending", "Scheduled check", "Skipped because another run is in progress");
             }
             Thread.sleep(5000);
         }
@@ -374,7 +359,7 @@ public final class Likearr {
             Dashboard.start();
             scheduled();
         } else if (args.length == 1 && (args[0].equals("--dry-run") || args[0].equals("--apply")))
-            System.exit(new Likearr().run(args[0].equals("--apply")));
+            System.exit(RunCoordinator.once(args[0].equals("--apply")));
         else {
             System.err.println("Usage: java -jar likearr.jar [--dry-run|--apply]");
             System.exit(2);

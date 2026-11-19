@@ -55,6 +55,10 @@
         border-radius: 99px;
         font-size: 12px;
       }
+      button.run { background:#c6ef7a; color:#162011; border:0; border-radius:10px; padding:11px 16px; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+      button.run:disabled { opacity:.55; cursor:wait; }
+      .actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:22px; }
+      .run-message { font-size:12px; color:#a0aaa2; }
       .eyebrow {
         color: #a9cb84;
         letter-spacing: 0.16em;
@@ -207,6 +211,7 @@
       <div class="eyebrow">Your music, in the right place</div>
       <h1>Everything in its place.</h1>
       <p>A quiet overview of your liked tracks and recent moves.</p>
+      <div class="actions"><button class="run" id="run-now" type="button">▶ Run now</button><span class="run-message" id="run-message" aria-live="polite"></span></div>
       <div class="cards">
         <div class="card">
           <div class="label">Daily check</div>
@@ -279,6 +284,8 @@
           if (!response.ok) throw Error("Status unavailable");
 
           const data = await response.json();
+          $("run-now").disabled = data.running;
+          $("run-now").textContent = data.running ? "Running…" : "▶ Run now";
           $("connection").textContent = "● Connected";
           $("schedule").textContent = data.runTime;
           $("timezone").textContent = data.timezone;
@@ -321,6 +328,18 @@
           $("connection").textContent = "● Disconnected";
         }
       }
+      $("run-now").addEventListener("click", async () => {
+        const token = window.prompt("Enter your Likearr dashboard token:");
+        if (token === null) return;
+        $("run-now").disabled = true;
+        try {
+          const response = await fetch("/api/run", { method: "POST", headers: { "X-Likearr-Token": token } });
+          $("run-message").textContent = await response.text();
+        } catch (e) {
+          $("run-message").textContent = "Could not start the run.";
+        }
+        await update();
+      });
       update();
       setInterval(update, 15000);
     </script>
