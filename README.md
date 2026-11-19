@@ -6,15 +6,20 @@ Likearr moves liked Explo tracks into the main Jellyfin music library. It copies
 
 The application uses Java 21 and Maven. The default container runs the scheduler at **01:00** every day in the `Europe/Amsterdam` time zone, retrying pending moves for up to 45 minutes. The application also supports `--dry-run` and `--apply` for one-off checks.
 
-Build and test with `mvn clean verify`. The Dockerfile runs the same tests during its Maven build and builds a Java runtime image. `compose.yaml` builds the image and uses the existing NAS UID/GID and host networking. This deployment uses:
+Build and test with `mvn clean verify`. The Dockerfile builds a Java runtime image. `compose.yaml` builds it locally; `deploy/compose.container-manager.yaml` pulls the published image from GHCR.
 
-- `/volume1/docker/media-automation/explo/settings/.env` for the existing Explo Jellyfin URL, username and API key.
-- `/volume1/docker/media-automation/explo/settings/promote-favorites-pending.json` for persistent pending records.
-- `/volume1/jellyfin/Music` for files. Jellyfin's `/media/Music` path is mapped to this NAS path.
-- `http://127.0.0.1:8096` for Jellyfin on the NAS.
-
-The Jellyfin URL, settings directory and music path can be overridden with `LIKEARR_JELLYFIN_URL`, `LIKEARR_SETTINGS` and `LIKEARR_MUSIC`. The path mapping assumes Jellyfin exposes the Music library at `/media/Music`.
+All connection details and paths are configured with environment variables in `.env`; copy `.env.example` and set values for your Jellyfin server and filesystem. `LIKEARR_JELLYFIN_API_KEY` and `LIKEARR_JELLYFIN_USERNAME` select the account whose likes are processed. `LIKEARR_JELLYFIN_URL` is the server address. `LIKEARR_MUSIC_HOST` and `LIKEARR_STATE_HOST` are host paths mounted as `LIKEARR_MUSIC_ROOT` and `LIKEARR_STATE_ROOT` inside the container. `LIKEARR_EXPLO_ROOT` identifies the source folder, and `LIKEARR_JELLYFIN_MUSIC_ROOT` is the path prefix reported by Jellyfin. Likearr automatically creates `/state/promote-favorites-pending.json` when it first records a pending move; the host state directory remains mounted for persistence. `TZ` controls the daily schedule timezone. The default `compose.yaml` uses `env_file: .env`; keep that file private and never commit it.
 
 This repository does not contain credentials, music, or live state. The currently running NAS container still uses the previous Python implementation; updating this repository alone does not deploy or start the Java application. Do not run both implementations at the same time: they share pending state and music files and do not coordinate with each other.
 
 The mover requests a Jellyfin library refresh after creating a copy. Explo's `--clean-downloads` setting may remove an original while its move is pending; review that setting before relying on the mover. Tracks with old pending records from versions that did not store the original Jellyfin item ID are left for manual review.
+
+## GitHub Actions and Container Manager
+
+`Test` runs Maven verification on pushes to `main`, pull requests and manual runs. `Publish image` is manual (`Actions` → workflow → `Run workflow`); it runs tests, builds the container and publishes both a commit tag and `latest` to GHCR. It does not connect to the NAS.
+
+For the first installation, make the Likearr package public in GitHub Packages so Container Manager can pull it without registry credentials. In `deploy/compose.container-manager.yaml`, replace `YOUR_GITHUB_OWNER` with the lowercase GitHub owner or organization. Create a project folder on the NAS, put that Compose file there, and create a `.env` beside it using `.env.example` as the template. Set the host music and state paths, Jellyfin URL, API key and username. Keep `.env` private.
+
+In Container Manager, create a Project from that folder and start it. Container Manager reads the Compose image reference and pulls it from GHCR. For updates, run `Publish image`, then use the project’s Action menu to pull the updated image and recreate the project. Use a commit tag instead of `latest` when you want a fixed version; changing tags also makes rollback straightforward.
+
+Before starting Java the first time, stop the existing Python `explo-favorites` project in Container Manager. Both processes handle the same liked tracks and pending state, so only one should run.

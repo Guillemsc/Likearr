@@ -17,28 +17,23 @@ import java.util.stream.Stream;
 
 public final class Likearr {
     static final ObjectMapper JSON = new ObjectMapper();
-    static final Path MUSIC = Path.of(System.getenv().getOrDefault("LIKEARR_MUSIC", "/volume1/jellyfin/Music")).toAbsolutePath().normalize();
-    static final Path EXPLO = MUSIC.resolve("Explo");
-    static final Path SETTINGS = Path.of(System.getenv().getOrDefault("LIKEARR_SETTINGS", "/volume1/docker/media-automation/explo/settings"));
-    static final Path STATE = SETTINGS.resolve("promote-favorites-pending.json");
-    static final String URL = System.getenv().getOrDefault("LIKEARR_JELLYFIN_URL", "http://127.0.0.1:8096");
+    static final Path MUSIC = Path.of(env("LIKEARR_MUSIC_ROOT", "/music")).toAbsolutePath().normalize();
+    static final Path EXPLO = Path.of(env("LIKEARR_EXPLO_ROOT", MUSIC.resolve("Explo").toString())).toAbsolutePath().normalize();
+    static final Path STATE = Path.of("/state/promote-favorites-pending.json");
+    static final Path JELLYFIN_MUSIC = Path.of(env("LIKEARR_JELLYFIN_MUSIC_ROOT", "/media/Music")).normalize();
+    static final String URL = env("LIKEARR_JELLYFIN_URL", "http://127.0.0.1:8096");
     static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build();
     final String token, user;
     final ArrayNode pending;
 
+    static String env(String name, String fallback) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? fallback : value.strip();
+    }
+
     Likearr() throws Exception {
-        Map<String,String> config = new HashMap<>();
-        for (String line : Files.readAllLines(SETTINGS.resolve(".env"))) {
-            int i = line.indexOf('=');
-            if (i > 0 && !line.stripLeading().startsWith("#")) {
-                String val = line.substring(i + 1).strip();
-                if (val.length() >= 2 && ((val.startsWith("\"") && val.endsWith("\"")) || (val.startsWith("'") && val.endsWith("'")))) val = val.substring(1, val.length() - 1);
-                config.put(line.substring(0, i).strip(), val);
-            }
-        }
-        if (!"jellyfin".equalsIgnoreCase(config.get("EXPLO_SYSTEM"))) throw new IllegalStateException("Explo is not configured for Jellyfin");
-        token = Objects.requireNonNull(config.get("API_KEY"), "Missing Jellyfin API key");
-        String username = Objects.requireNonNull(config.get("SYSTEM_USERNAME"), "Missing Jellyfin user");
+        token = Objects.requireNonNull(System.getenv("LIKEARR_JELLYFIN_API_KEY"), "Missing LIKEARR_JELLYFIN_API_KEY");
+        String username = Objects.requireNonNull(System.getenv("LIKEARR_JELLYFIN_USERNAME"), "Missing LIKEARR_JELLYFIN_USERNAME");
         if (token.isBlank() || username.isBlank()) throw new IllegalStateException("Jellyfin API key or user is empty");
         List<String> ids = new ArrayList<>();
         for (JsonNode u : request("GET", "/Users", Map.of())) if (u.path("Name").asText().equalsIgnoreCase(username)) ids.add(u.path("Id").asText());
@@ -59,14 +54,15 @@ public final class Likearr {
     }
     static String norm(String s) { return Normalizer.normalize(s == null ? "" : s, Normalizer.Form.NFKC).strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT); }
     static boolean safeComponent(String s) { return s != null && !s.isBlank() && !s.equals(".") && !s.equals("..") && !s.contains("/") && !s.contains("\\") && s.codePoints().noneMatch(c -> c < 32); }
-    static Path hostPath(String raw) { Path p = Path.of(raw).normalize(); Path remote = Path.of("/media/Music"); return p.startsWith(remote) ? MUSIC.resolve(remote.relativize(p)).normalize() : p; }
+    static Path hostPath(String raw) { Path p = Path.of(raw).normalize(); return p.startsWith(JELLYFIN_MUSIC) ? MUSIC.resolve(JELLYFIN_MUSIC.relativize(p)).normalize() : p; }
     static String sha(Path p) throws Exception {
         MessageDigest d = MessageDigest.getInstance("SHA-256");
         try (InputStream in = Files.newInputStream(p)) { byte[] b = new byte[1024*1024]; int n; while ((n=in.read(b)) != -1) d.update(b,0,n); }
         return HexFormat.of().formatHex(d.digest());
     }
     void save() throws Exception {
-        Path tmp = Files.createTempFile(SETTINGS, ".pending-", ".json");
+        Files.createDirectories(STATE.getParent());
+        Path tmp = Files.createTempFile(STATE.getParent(), ".pending-", ".json");
         try {
             try { Files.setPosixFilePermissions(tmp, PosixFilePermissions.fromString("rw-------")); } catch (UnsupportedOperationException ignored) {}
             JSON.writeValue(tmp.toFile(), pending);

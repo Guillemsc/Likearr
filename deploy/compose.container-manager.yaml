@@ -1,0 +1,11 @@
+services:
+  likearr:
+    image: ghcr.io/YOUR_GITHUB_OWNER/likearr:latest
+    container_name: likearr
+    user: "1026:100"
+    network_mode: host
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ${LIKEARR_MUSIC_HOST:?Set LIKEARR_MUSIC_HOST in .env}:${LIKEARR_MUSIC_ROOT:-/music}
+      - ${LIKEARR_STATE_HOST:?Set LIKEARR_STATE_HOST in .env}:${LIKEARR_STATE_ROOT:-/state}
