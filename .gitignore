@@ -1,0 +1,4 @@
+target/
+.env
+*.log
+promote-favorites-pending.json

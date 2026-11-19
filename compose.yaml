@@ -1,0 +1,12 @@
+services:
+  explo-favorites:
+    build: .
+    image: likearr:local
+    user: "1026:100"
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Amsterdam
+    volumes:
+      - /volume1/docker/media-automation/explo/settings:/volume1/docker/media-automation/explo/settings
+      - /volume1/jellyfin/Music:/volume1/jellyfin/Music
