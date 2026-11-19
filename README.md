@@ -1,3 +1,5 @@
+[![Test](https://github.com/Guillemsc/Likearr/actions/workflows/test.yml/badge.svg)](https://github.com/Guillemsc/Likearr/actions/workflows/test.yml)
+
 # Likearr
 
 Likearr moves liked Explo tracks into the main Jellyfin music library. It copies and verifies the file, waits until Jellyfin indexes the copy, likes the new item, then removes the old like and original file. It skips matching tracks already indexed elsewhere in the main music library. Pending move records persist between runs and expire after 30 days; expiring a record does not delete music.
