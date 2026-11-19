@@ -58,7 +58,8 @@ final class Dashboard {
             throw new IllegalArgumentException("LIKEARR_WEB_PORT must be between 1 and 65535", ex);
         }
 
-        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
+        String bindAddress = Likearr.env("LIKEARR_WEB_BIND", "127.0.0.1");
+        HttpServer server = HttpServer.create(new InetSocketAddress(bindAddress, port), 0);
 
         server.createContext("/", exchange -> {
             if (!"GET".equals(exchange.getRequestMethod())) {
@@ -81,7 +82,7 @@ final class Dashboard {
         });
 
         server.start();
-        System.out.println("Dashboard listening on localhost:" + port);
+        System.out.println("Dashboard listening on " + bindAddress + ":" + port);
     }
 
     private static synchronized byte[] status() throws IOException {

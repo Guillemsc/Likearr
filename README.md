@@ -10,13 +10,13 @@ The application uses Java 21 and Maven. The scheduler runs daily at `LIKEARR_RUN
 
 ## Activity dashboard
 
-The read-only dashboard shows the daily schedule, pending moves and the last 200 activity events recorded since this version was installed. It listens only on localhost at port 7676 by default; set `LIKEARR_WEB_PORT` to change the port. The existing host-network Compose setup lets it listen on the NAS loopback interface. To view it from your computer, create an SSH tunnel:
+The read-only dashboard shows the daily schedule, pending moves and the last 200 activity events recorded since this version was installed. It listens on localhost at port 7676 by default; set `LIKEARR_WEB_PORT` to change the port. With host networking, set `LIKEARR_WEB_BIND` to a specific NAS LAN address to access it from that network. The dashboard has no sign-in, so anyone who can reach that address and port can view activity. Alternatively, leave it on localhost and create an SSH tunnel:
 
 ```sh
 ssh -N -L 7676:127.0.0.1:7676 -p 5552 BateaCapital-admin@192.168.1.152
 ```
 
-Keep that command running and open `http://127.0.0.1:7676` on your computer. The activity history is stored in the existing persistent state directory. The dashboard is read-only and has no sign-in; keep it on localhost or protect it with authenticated access if you later put a proxy in front of it.
+Keep that command running and open `http://127.0.0.1:7676` on your computer. The activity history is stored in the existing persistent state directory. For access outside a trusted network, use an authenticated proxy.
 
 Build and test with `mvn clean verify`. The Dockerfile builds a Java runtime image. `compose.yaml` builds it locally; `deploy/compose.container-manager.yaml` pulls the published image from GHCR.
 
