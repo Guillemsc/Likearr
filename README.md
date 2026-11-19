@@ -20,7 +20,7 @@ The mover requests a Jellyfin library refresh after creating a copy. Explo's `--
 
 `Test` runs Maven verification on pushes to `main`, pull requests and manual runs. `Publish image` is manual (`Actions` → workflow → `Run workflow`); it runs tests, builds the container and publishes both a commit tag and `latest` to GHCR. It does not connect to the NAS.
 
-For the first installation, make the Likearr package public in GitHub Packages so Container Manager can pull it without registry credentials. In `deploy/compose.container-manager.yaml`, replace `YOUR_GITHUB_OWNER` with the lowercase GitHub owner or organization. Create a project folder on the NAS, put that Compose file there, and create a `.env` beside it using `.env.example` as the template. Set the host music and state paths, Jellyfin URL, API key and username. Keep `.env` private.
+For the first installation, make the Likearr package public in GitHub Packages so Container Manager can pull it without registry credentials. The Container Manager Compose file uses `ghcr.io/guillemsc/likearr:latest`. Create a project folder on the NAS, put that Compose file there, and create a `.env` beside it using `.env.example` as the template. Set the host music and state paths, Jellyfin URL, API key and username. Keep `.env` private.
 
 In Container Manager, create a Project from that folder and start it. Container Manager reads the Compose image reference and pulls it from GHCR. For updates, run `Publish image`, then use the project’s Action menu to pull the updated image and recreate the project. Use a commit tag instead of `latest` when you want a fixed version; changing tags also makes rollback straightforward.
 

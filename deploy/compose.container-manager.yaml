@@ -1,6 +1,6 @@
 services:
   likearr:
-    image: ghcr.io/YOUR_GITHUB_OWNER/likearr:latest
+    image: ghcr.io/guillemsc/likearr:latest
     container_name: likearr
     user: "1026:100"
     network_mode: host
