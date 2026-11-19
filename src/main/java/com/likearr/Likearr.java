@@ -45,7 +45,13 @@ public final class Likearr {
     }
 
     static boolean safeComponent(String s) {
-        return s != null && !s.isBlank() && !s.equals(".") && !s.equals("..") && !s.contains("/") && !s.contains("\\") && s.codePoints().noneMatch(c -> c < 32);
+        return s != null &&
+                !s.isBlank() &&
+                !s.equals(".") &&
+                !s.equals("..") &&
+                !s.contains("/") &&
+                !s.contains("\\") &&
+                s.codePoints().noneMatch(c -> c < 32);
     }
 
     static Path hostPath(String raw) {
@@ -55,11 +61,13 @@ public final class Likearr {
 
     static String sha(Path p) throws Exception {
         MessageDigest d = MessageDigest.getInstance("SHA-256");
+
         try (InputStream in = Files.newInputStream(p)) {
             byte[] b = new byte[1024 * 1024];
             int n;
             while ((n = in.read(b)) != -1) d.update(b, 0, n);
         }
+
         return HexFormat.of().formatHex(d.digest());
     }
 
@@ -72,10 +80,13 @@ public final class Likearr {
                 Files.setPosixFilePermissions(tmp, PosixFilePermissions.fromString("rw-------"));
             } catch (UnsupportedOperationException ignored) {
             }
+
             JSON.writeValue(tmp.toFile(), pending);
+
             try (FileChannel ch = FileChannel.open(tmp, StandardOpenOption.WRITE)) {
                 ch.force(true);
             }
+
             Files.move(tmp, STATE, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } finally {
             Files.deleteIfExists(tmp);
@@ -94,14 +105,17 @@ public final class Likearr {
 
         for (JsonNode x : jellyfin.search(item.path("Name").asText())) {
             if (!norm(x.path("Name").asText()).equals(title)) continue;
+
             boolean artist = false;
             for (JsonNode a : x.path("Artists")) {
                 if (artists.contains(norm(a.asText()))) artist = true;
             }
+
             if (!artist) continue;
             if (x.path("Path").asText().isBlank()) throw new IOException("Matching Jellyfin track has no path");
 
             Path p = hostPath(x.path("Path").asText());
+
             if (p.startsWith(MUSIC) && !p.startsWith(EXPLO)) {
                 System.out.println("SKIP existing library track: " + p);
                 return true;
@@ -183,7 +197,6 @@ public final class Likearr {
                 continue;
             }
 
-
             String id = matching.getFirst().path("Id").asText();
 
             jellyfin.setFavorite(id, true);
@@ -218,12 +231,16 @@ public final class Likearr {
 
     static List<JsonNode> toList(ArrayNode a) {
         List<JsonNode> list = new ArrayList<>();
+
         a.forEach(list::add);
+
         return list;
     }
 
     static int indexOf(ArrayNode a, JsonNode n) {
-        for (int i = 0; i < a.size(); i++) if (a.get(i) == n) return i;
+        for (int i = 0; i < a.size(); i++) {
+            if (a.get(i) == n) return i;
+        }
         throw new IllegalStateException();
     }
 
@@ -309,12 +326,24 @@ public final class Likearr {
         return errors == 0 ? 0 : 1;
     }
 
+    static LocalTime scheduledTime(String value) {
+        if (!value.matches("\\d{2}:\\d{2}"))
+            throw new IllegalArgumentException("LIKEARR_RUN_TIME must use 24-hour HH:mm format");
+        try {
+            return LocalTime.parse(value);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException("LIKEARR_RUN_TIME must be a valid 24-hour time (HH:mm)", e);
+        }
+    }
+
     static void scheduled() throws Exception {
+        LocalTime runTime = scheduledTime(env("LIKEARR_RUN_TIME", "01:00"));
+        System.out.println("Waiting for " + runTime + " local time.");
         LocalDate last = null;
         while (!Thread.currentThread().isInterrupted()) {
             ZonedDateTime now = ZonedDateTime.now();
 
-            if (now.getHour() == 1 && now.getMinute() == 0 && !now.toLocalDate().equals(last)) {
+            if (now.getHour() == runTime.getHour() && now.getMinute() == runTime.getMinute() && !now.toLocalDate().equals(last)) {
                 last = now.toLocalDate();
                 long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(45);
                 do {
@@ -334,7 +363,6 @@ public final class Likearr {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            System.out.println("Waiting for 01:00 local time.");
             scheduled();
         } else if (args.length == 1 && (args[0].equals("--dry-run") || args[0].equals("--apply")))
             System.exit(new Likearr().run(args[0].equals("--apply")));

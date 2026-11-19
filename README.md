@@ -6,7 +6,7 @@ Likearr moves liked Explo tracks into the main Jellyfin music library. It copies
 
 ## Java application
 
-The application uses Java 21 and Maven. The default container runs the scheduler at **01:00** every day in the `Europe/Amsterdam` time zone, retrying pending moves for up to 45 minutes. The application also supports `--dry-run` and `--apply` for one-off checks.
+The application uses Java 21 and Maven. The scheduler runs daily at `LIKEARR_RUN_TIME` (default `01:00`) in the `TZ` time zone, retrying pending moves for up to 45 minutes. Set the time in 24-hour `HH:mm` format, for example `LIKEARR_RUN_TIME=13:30`. Recreate the container after changing `.env`. The application also supports `--dry-run` and `--apply` for one-off checks.
 
 Build and test with `mvn clean verify`. The Dockerfile builds a Java runtime image. `compose.yaml` builds it locally; `deploy/compose.container-manager.yaml` pulls the published image from GHCR.
 

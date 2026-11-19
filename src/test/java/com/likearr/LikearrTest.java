@@ -4,6 +4,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LikearrTest {
+    @Test void parsesDailyRunTimeAndRejectsInvalidValues() {
+        assertEquals(java.time.LocalTime.of(1, 0), Likearr.scheduledTime("01:00"));
+        assertEquals(java.time.LocalTime.of(13, 30), Likearr.scheduledTime("13:30"));
+        assertThrows(IllegalArgumentException.class, () -> Likearr.scheduledTime("1:00"));
+        assertThrows(IllegalArgumentException.class, () -> Likearr.scheduledTime("24:00"));
+    }
     @Test void rejectsUnsafeComponents() {
         assertFalse(Likearr.safeComponent("../artist"));
         assertFalse(Likearr.safeComponent(".."));
